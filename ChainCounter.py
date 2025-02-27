@@ -6,14 +6,24 @@ import argparse
 def load_json(file_path):
     """Load JSON data from a file."""
     with open(file_path, "r", encoding="utf-8") as file:
-        return json.load(file)
+        data = json.load(file)
+
+    if not isinstance(data, dict):
+        raise ValueError("Invalid JSON format: Expected a dictionary at the top level.")
+
+    return data
+
 
 
 def process_purchases(data):
     """Process the purchases and return counts per jump."""
     type_mappings = {1: "Items", 2: "Alt-Forms", 3: "Drawbacks"}
     jump_totals = defaultdict(lambda: {"Items": 0, "Alt-Forms": 0, "Drawbacks": 0})
-    jump_names = {jump.get("_id"): jump.get("name", "Unknown Jump") for jump in data.get("jumps", [])}
+    jump_list = data.get("jumps", [])
+    if isinstance(jump_list, str):
+        raise ValueError("Expected 'jumps' to be a list of dictionaries, but got a string.")
+
+    jump_names = {int(jump_id): jump_data.get("name", "Unknown Jump") for jump_id, jump_data in data.get("jumps", {}).items()}
     
     for purchase in data.get("purchases", {}).values():
         if purchase.get("_characterId") == 0:
