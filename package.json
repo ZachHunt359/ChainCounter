@@ -1,0 +1,26 @@
+{
+  "name": "chaincounter",
+  "version": "1.0.0",
+  "description": "JSON parser for the web app ChainMaker (http://chainmaker.design), to total up Items, Alt-Forms, and Drawbacks for the purposes of calculating Milestones.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZachHunt359/ChainCounter.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZachHunt359/ChainCounter/issues"
+  },
+  "homepage": "https://github.com/ZachHunt359/ChainCounter#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "express-fileupload": "^1.5.1"
+  }
+}
