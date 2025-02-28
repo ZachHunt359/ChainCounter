@@ -12,9 +12,9 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     try {
       const data = JSON.parse(event.target.result);
       populateDropdowns(); // Ensure dropdowns are populated before calling displayResults
-      const { jumpTotals, jumpNames, jumpSupplements } = processPurchases(data);
+      const { jumpTotals, jumpNames, jumpSupplements, jumpOrder } = processPurchases(data);
       const exterminationValues = {}; // Store Extermination input values
-      const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
+        const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
       console.log(resultsArray); // You can use this array for further processing
 
       // Add event listeners to dropdowns to recalculate the table on change
@@ -56,11 +56,12 @@ function processPurchases(data) {
       }
     }
   }
+    const jumpOrder = data.jumpList || Object.keys(jumpNames); // Use jumpList if available, else fallback
 
-  return { jumpTotals, jumpNames, jumpSupplements };
+  return { jumpTotals, jumpNames, jumpSupplements , jumpOrder};
 }
 
-function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues) {
+function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder) {
   const resultsTableBody = document.getElementById('resultsTableBody');
   resultsTableBody.innerHTML = '';
 
@@ -101,9 +102,16 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
   let accumulatedDrawbacksPT = 0;
   let accumulatedExterminationsPT = 0;
 
-  for (const [jumpId, totals] of Object.entries(jumpTotals)) {
-    const row = document.createElement('tr');
-    const isSupplement = jumpSupplements[jumpId];
+  const orderedResults = jumpOrder.map(jumpId => ({
+    jumpId,
+    jumpName: jumpNames[jumpId] || `Jump ${jumpId}`,
+    totals: jumpTotals[jumpId] || { Items: 0, 'Alt-Forms': 0, Drawbacks: 0, Exterminations: 0 }
+  }));
+
+    for (const result of orderedResults) {
+        const { jumpId, jumpName, totals } = result;
+        const row = document.createElement('tr');
+        const isSupplement = jumpSupplements[jumpId];
 
     if (!isSupplement) {
       jumpCount += 1;
