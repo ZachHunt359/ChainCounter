@@ -1,4 +1,3 @@
-// filepath: /c:/Users/khayy/source/repos/ChainCounter/ChainCounterFrontend/src/app/app.module.ts
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common'; // Import CommonModule
@@ -9,8 +8,8 @@ import { AppComponent } from './app.component';
   declarations: [AppComponent],
   imports: [
     BrowserModule,
-    CommonModule, // Add CommonModule to imports
-    HttpClientModule // Add HttpClientModule to imports
+    CommonModule,
+    HttpClientModule 
   ],
   providers: [
     provideHttpClient(withFetch()) // Enable fetch for HttpClient
