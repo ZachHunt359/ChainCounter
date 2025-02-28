@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JumpChain JSON Processor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>JumpChain JSON Processor</h1>
+    <input type="file" id="fileInput" accept=".json">
+    <button id="uploadButton">Upload</button>
+
+    <div id="resultsContainer" style="display: none;">
+      <h2>Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th rowspan="1">#</th>
+            <th rowspan="1">Jump</th>
+            <th rowspan="2">Total PT</th>
+            <th colspan="2">Items</th>
+            <th colspan="2">Alt-Forms</th>
+            <th colspan="2">Drawbacks</th>
+            <th colspan="2">Exterminations</th>
+          </tr>
+        </thead>
+        <tbody id="resultsTableBody">
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Totals</td>
+            <td id="totalPT"></td>
+            <td id="totalItems"></td>
+            <td id="totalItemsPT"></td>
+            <td id="totalAltForms"></td>
+            <td id="totalAltFormsPT"></td>
+            <td id="totalDrawbacks"></td>
+            <td id="totalDrawbacksPT"></td>
+            <td id="totalExterminations"></td>
+            <td id="totalExterminationsPT"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div id="rewardScenarios" style="display: none;">
+      <h2>Reward Scenarios</h2>
+      <div>
+        <label for="drawbackTaker">Drawback Taker (+</label>
+        <select id="drawbackTakerPT"></select>
+        <label> PT for every </label>
+        <select id="drawbackTakerCount"></select>
+        <label> Drawbacks)</label>
+      </div>
+      <div>
+        <label for="thousandFaces">Thousand Faces (+</label>
+        <select id="thousandFacesPT"></select>
+        <label> PT for every </label>
+        <select id="thousandFacesCount"></select>
+        <label> Alt-Forms)</label>
+      </div>
+      <div>
+        <label for="exterminators">Exterminators (+</label>
+        <select id="exterminatorsPT"></select>
+        <label> PT for every </label>
+        <select id="exterminatorsCount"></select>
+        <label> evil bastards)</label>
+      </div>
+      <div>
+        <label for="packRat">Pack Rat (+</label>
+        <select id="packRatPT"></select>
+        <label> PT for every </label>
+        <select id="packRatCount"></select>
+        <label> Items)</label>
+      </div>
+    </div>
+  </div>
+
+  <script src="ChainCounter.js"></script>
+</body>
+</html>
