@@ -14,12 +14,12 @@ document.getElementById('uploadButton').addEventListener('click', () => {
       populateDropdowns(); // Ensure dropdowns are populated before calling displayResults
       const { jumpTotals, jumpNames, jumpSupplements, jumpOrder } = processPurchases(data);
       const exterminationValues = {}; // Store Extermination input values
-        const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
+      const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
       console.log(resultsArray); // You can use this array for further processing
 
       // Add event listeners to dropdowns to recalculate the table on change
-      addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
-      addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
+      addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
+      addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
     } catch (error) {
       alert('Error parsing JSON file: ' + error.message);
     }
@@ -56,9 +56,9 @@ function processPurchases(data) {
       }
     }
   }
-    const jumpOrder = data.jumpList || Object.keys(jumpNames); // Use jumpList if available, else fallback
+  const jumpOrder = data.jumpList || Object.keys(jumpNames); // Use jumpList if available, else fallback
 
-  return { jumpTotals, jumpNames, jumpSupplements , jumpOrder};
+  return { jumpTotals, jumpNames, jumpSupplements, jumpOrder };
 }
 
 function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder) {
@@ -108,10 +108,10 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     totals: jumpTotals[jumpId] || { Items: 0, 'Alt-Forms': 0, Drawbacks: 0, Exterminations: 0 }
   }));
 
-    for (const result of orderedResults) {
-        const { jumpId, jumpName, totals } = result;
-        const row = document.createElement('tr');
-        const isSupplement = jumpSupplements[jumpId];
+  for (const result of orderedResults) {
+    const { jumpId, jumpName, totals } = result;
+    const row = document.createElement('tr');
+    const isSupplement = jumpSupplements[jumpId];
 
     if (!isSupplement) {
       jumpCount += 1;
@@ -201,7 +201,8 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
   document.getElementById('resultsContainer').style.display = 'block';
   document.getElementById('rewardScenarios').style.display = 'block';
 
-  addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
+  // Re-add extermination input listeners after updating the table
+  addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
 
   return resultsArray;
 }
@@ -229,7 +230,7 @@ function populateDropdowns() {
   document.getElementById('packRatCount').value = 5;
 }
 
-function addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues) {
+function addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder) {
   const dropdowns = [
     'drawbackTakerPT',
     'drawbackTakerCount',
@@ -243,19 +244,19 @@ function addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exter
 
   dropdowns.forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
-      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
+      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
     });
   });
 }
 
-function addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues) {
+function addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder) {
   const inputs = document.querySelectorAll('.exterminations-input');
 
   inputs.forEach(input => {
     input.addEventListener('input', () => {
       const jumpId = input.getAttribute('data-jump-id');
       exterminationValues[jumpId] = parseInt(input.value, 10) || 0;
-      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues);
+      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
     });
   });
 }
