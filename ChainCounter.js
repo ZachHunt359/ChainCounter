@@ -12,10 +12,10 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     try {
       const data = JSON.parse(event.target.result);
       populateDropdowns(); // Ensure dropdowns are populated before calling displayResults
-      const { jumpTotals, jumpNames, jumpSupplements, jumpOrder } = processPurchases(data);
+      const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(data);
       const exterminationValues = {}; // Store Extermination input values
-      const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
-      console.log(resultsArray); // You can use this array for further processing
+      const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
+      //console.log(resultsArray); // You can use this array for further processing
 
       // Add event listeners to dropdowns to recalculate the table on change
       addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
@@ -28,10 +28,11 @@ document.getElementById('uploadButton').addEventListener('click', () => {
 });
 
 function processPurchases(data) {
-  const typeMappings = { 1: 'Items', 2: 'Alt-Forms', 3: 'Drawbacks' };
+  const typeMappings = { 1: 'Items', 2: 'AltForms', 3: 'Drawbacks' };
   const jumpTotals = {};
   const jumpNames = {};
   const jumpSupplements = {};
+  const altFormsByCharacterAndJump = {};
 
   if (data.jumps) {
     for (const [jumpId, jumpData] of Object.entries(data.jumps)) {
@@ -42,12 +43,12 @@ function processPurchases(data) {
 
   if (data.purchases) {
     for (const purchase of Object.values(data.purchases)) {
-      if (purchase._characterId === 0) {
+      if (purchase._characterId === 0) { // Ensure only main jumper's purchases are counted
         const jumpId = purchase._jumpId;
         const itemType = purchase._type;
 
         if (!jumpTotals[jumpId]) {
-          jumpTotals[jumpId] = { Items: 0, 'Alt-Forms': 0, Drawbacks: 0, Exterminations: 0 };
+          jumpTotals[jumpId] = { Items: 0, AltForms: 0, Drawbacks: 0, Exterminations: 0 };
         }
 
         if (typeMappings[itemType]) {
@@ -56,12 +57,34 @@ function processPurchases(data) {
       }
     }
   }
+
+  // Log all alt-forms separated by characterId and jumpId
+  if (data.altforms) {
+    console.log("Alt-Forms Data:", data.altforms);
+    for (const altForm of Object.values(data.altforms)) {
+      const characterId = Number(altForm.characterId);
+      const jumpId = altForm.jumpId;
+
+      if (!altFormsByCharacterAndJump[characterId]) {
+        altFormsByCharacterAndJump[characterId] = {};
+      }
+
+      if (!altFormsByCharacterAndJump[characterId][jumpId]) {
+        altFormsByCharacterAndJump[characterId][jumpId] = [];
+      }
+
+      altFormsByCharacterAndJump[characterId][jumpId].push(altForm);
+
+      console.log(`Logging Alt-Form ${altForm._id} named ${altForm.name} for Character ${characterId} and Jump ${jumpId}`);
+    }
+  }
+
   const jumpOrder = data.jumpList || Object.keys(jumpNames); // Use jumpList if available, else fallback
 
-  return { jumpTotals, jumpNames, jumpSupplements, jumpOrder };
+  return { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump };
 }
 
-function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder) {
+function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump) {
   const resultsTableBody = document.getElementById('resultsTableBody');
   resultsTableBody.innerHTML = '';
 
@@ -86,27 +109,20 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
   const exterminatorsPT = parseInt(document.getElementById('exterminatorsPT').value, 10);
   const exterminatorsCount = parseInt(document.getElementById('exterminatorsCount').value, 10);
 
-  console.log('Initial Values:', {
-    packRatPT,
-    packRatCount,
-    thousandFacesPT,
-    thousandFacesCount,
-    drawbackTakerPT,
-    drawbackTakerCount,
-    exterminatorsPT,
-    exterminatorsCount
-  });
-
   let accumulatedItemsPT = 0;
   let accumulatedAltFormsPT = 0;
   let accumulatedDrawbacksPT = 0;
   let accumulatedExterminationsPT = 0;
 
+  console.log("Jump Totals:", jumpTotals);
+  
   const orderedResults = jumpOrder.map(jumpId => ({
     jumpId,
     jumpName: jumpNames[jumpId] || `Jump ${jumpId}`,
-    totals: jumpTotals[jumpId] || { Items: 0, 'Alt-Forms': 0, Drawbacks: 0, Exterminations: 0 }
+    totals: jumpTotals[jumpId] || { Items: 0, AltForms: 0, Drawbacks: 0, Exterminations: 0 }
   }));
+
+  console.log("Ordered Results:", orderedResults);
 
   for (const result of orderedResults) {
     const { jumpId, jumpName, totals } = result;
@@ -118,11 +134,13 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     }
 
     totalItems += totals.Items;
-    totalAltForms += totals['Alt-Forms'];
+    totalAltForms += totals.AltForms;
     totalDrawbacks += totals.Drawbacks;
     totalExterminations += exterminationValues[jumpId] || totals.Exterminations;
 
     console.log(`Jump ID: ${jumpId}`, {
+      jumpName,
+      totals,
       totalItems,
       totalAltForms,
       totalDrawbacks,
@@ -133,13 +151,6 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     const altFormsPT = Math.floor(totalAltForms / thousandFacesCount) * thousandFacesPT - accumulatedAltFormsPT;
     const drawbacksPT = Math.floor(totalDrawbacks / drawbackTakerCount) * drawbackTakerPT - accumulatedDrawbacksPT;
     const exterminationsPT = Math.floor(totalExterminations / exterminatorsCount) * exterminatorsPT - accumulatedExterminationsPT;
-
-    console.log(`PT Values for Jump ID: ${jumpId}`, {
-      itemsPT,
-      altFormsPT,
-      drawbacksPT,
-      exterminationsPT
-    });
 
     accumulatedItemsPT += itemsPT;
     accumulatedAltFormsPT += altFormsPT;
@@ -162,7 +173,7 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
       `<span class="PTcount">${rowTotalPT}</span>`,
       totals.Items,
       `<span class="PTcount">${itemsPT}</span>`,
-      totals['Alt-Forms'],
+      totals.AltForms,
       `<span class="PTcount">${altFormsPT}</span>`,
       totals.Drawbacks,
       `<span class="PTcount">${drawbacksPT}</span>`,
@@ -188,15 +199,15 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     resultsArray.push(rowData);
   }
 
-  document.getElementById('totalPT').innerHTML = totalPT;
-  document.getElementById('totalItems').innerHTML = totalItems;
-  document.getElementById('totalItemsPT').innerHTML = totalItemsPT;
-  document.getElementById('totalAltForms').innerHTML = totalAltForms;
-  document.getElementById('totalAltFormsPT').innerHTML = totalAltFormsPT;
-  document.getElementById('totalDrawbacks').innerHTML = totalDrawbacks;
-  document.getElementById('totalDrawbacksPT').innerHTML = totalDrawbacksPT;
-  document.getElementById('totalExterminations').innerHTML = totalExterminations;
-  document.getElementById('totalExterminationsPT').innerHTML = totalExterminationsPT;
+  updateElementWithTooltip('totalPT', totalPT, 'Total PT');
+  updateElementWithTooltip('totalItems', totalItems, 'Total Items');
+  updateElementWithTooltip('totalItemsPT', totalItemsPT, 'Items PT');
+  updateElementWithTooltip('totalAltForms', totalAltForms, 'Total Alt-Forms');
+  updateElementWithTooltip('totalAltFormsPT', totalAltFormsPT, 'Alt-Forms PT');
+  updateElementWithTooltip('totalDrawbacks', totalDrawbacks, 'Total Drawbacks');
+  updateElementWithTooltip('totalDrawbacksPT', totalDrawbacksPT, 'Drawbacks PT');
+  updateElementWithTooltip('totalExterminations', totalExterminations, 'Total Exterminations');
+  updateElementWithTooltip('totalExterminationsPT', totalExterminationsPT, 'Exterminations PT');
 
   document.getElementById('resultsContainer').style.display = 'block';
   document.getElementById('rewardScenarios').style.display = 'block';
@@ -259,4 +270,20 @@ function addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, 
       displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
     });
   });
+}
+
+function updateElementWithTooltip(id, value, tooltipText) {
+  const element = document.getElementById(id);
+  element.innerHTML = value;
+  element.classList.add('tooltip');
+  
+  const span = document.createElement('span');
+  span.className = 'tooltiptext';
+  span.textContent = tooltipText;
+  
+  element.appendChild(span);
+  
+  if (id.endsWith('PT')) {
+    element.classList.add('PTcount');
+  }
 }
