@@ -28,7 +28,7 @@ document.getElementById('uploadButton').addEventListener('click', () => {
 });
 
 function processPurchases(data) {
-  const typeMappings = { 1: 'Items', 2: 'AltForms', 3: 'Drawbacks' };
+  const typeMappings = { 1: 'Items', 3: 'Drawbacks' }; // Remove 2: 'AltForms'
   const jumpTotals = {};
   const jumpNames = {};
   const jumpSupplements = {};
@@ -43,7 +43,7 @@ function processPurchases(data) {
 
   if (data.purchases) {
     for (const purchase of Object.values(data.purchases)) {
-      if (purchase._characterId === 0) { // Ensure only main jumper's purchases are counted
+      if (purchase._characterId === 0) { // Only main jumper
         const jumpId = purchase._jumpId;
         const itemType = purchase._type;
 
@@ -54,36 +54,32 @@ function processPurchases(data) {
         if (typeMappings[itemType]) {
           jumpTotals[jumpId][typeMappings[itemType]] += 1;
         }
+        // Do NOT increment AltForms here!
       }
     }
   }
 
-  // Log all alt-forms separated by characterId and jumpId
+  // Build altFormsByCharacterAndJump
   if (data.altforms) {
-    console.log("Alt-Forms Data:", data.altforms);
     for (const altForm of Object.values(data.altforms)) {
       const characterId = Number(altForm.characterId);
       const jumpId = altForm.jumpId;
-
       if (!altFormsByCharacterAndJump[characterId]) {
         altFormsByCharacterAndJump[characterId] = {};
       }
-
       if (!altFormsByCharacterAndJump[characterId][jumpId]) {
         altFormsByCharacterAndJump[characterId][jumpId] = [];
       }
-
       altFormsByCharacterAndJump[characterId][jumpId].push(altForm);
-
-      console.log(`Logging Alt-Form ${altForm._id} named ${altForm.name} for Character ${characterId} and Jump ${jumpId}`);
     }
   }
 
-  const jumpOrder = data.jumpList || Object.keys(jumpNames); // Use jumpList if available, else fallback
+  const jumpOrder = data.jumpList || Object.keys(jumpNames);
 
   return { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump };
 }
 
+// In displayResults, use altFormsByCharacterAndJump[0][jumpId] for main jumper's alt-forms:
 function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump) {
   const resultsTableBody = document.getElementById('resultsTableBody');
   resultsTableBody.innerHTML = '';
@@ -167,13 +163,20 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
 
     const exterminationsValue = exterminationValues[jumpId] || totals.Exterminations;
 
+    // Count main jumper's alt-forms for this jump
+    const altFormsCount = (altFormsByCharacterAndJump[0] && altFormsByCharacterAndJump[0][jumpId])
+      ? altFormsByCharacterAndJump[0][jumpId].length
+      : 0;
+
+    totalAltForms += altFormsCount;
+
     const rowData = [
       !isSupplement ? jumpCount : '',
       jumpNames[jumpId] || `Jump ${jumpId}`,
       `<span class="PTcount">${rowTotalPT}</span>`,
       totals.Items,
       `<span class="PTcount">${itemsPT}</span>`,
-      totals.AltForms,
+      altFormsCount, // Use the correct count here
       `<span class="PTcount">${altFormsPT}</span>`,
       totals.Drawbacks,
       `<span class="PTcount">${drawbacksPT}</span>`,
