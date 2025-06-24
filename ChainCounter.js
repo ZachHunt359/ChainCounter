@@ -1,4 +1,7 @@
-document.getElementById('uploadButton').addEventListener('click', () => {
+let storedData = null;
+let storedResults = null;
+
+/* document.getElementById('uploadButton').addEventListener('click', () => {
   const fileInput = document.getElementById('fileInput');
   const file = fileInput.files[0];
 
@@ -25,6 +28,39 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     }
   };
   reader.readAsText(file);
+}); */
+
+document.getElementById('uploadButton').addEventListener('click', () => {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert('Please select a file first!');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      storedData = JSON.parse(event.target.result);
+      populateDropdowns();
+      document.getElementById('generateTableButton').disabled = false;
+      // Do not generate table yet!
+    } catch (error) {
+      alert('Error parsing JSON file: ' + error.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('generateTableButton').addEventListener('click', () => {
+  if (!storedData) {
+    alert('Please upload a file first!');
+    return;
+  }
+  const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData);
+  const exterminationValues = {}; // Reset extermination values on each generation
+  storedResults = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
 });
 
 function processPurchases(data) {
@@ -130,18 +166,16 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     }
 
     totalItems += totals.Items;
-    totalAltForms += totals.AltForms;
     totalDrawbacks += totals.Drawbacks;
     totalExterminations += exterminationValues[jumpId] || totals.Exterminations;
 
-    console.log(`Jump ID: ${jumpId}`, {
-      jumpName,
-      totals,
-      totalItems,
-      totalAltForms,
-      totalDrawbacks,
-      totalExterminations
-    });
+    // Count main jumper's alt-forms for this jump
+    const altFormsCount = (altFormsByCharacterAndJump[0] && altFormsByCharacterAndJump[0][jumpId])
+      ? altFormsByCharacterAndJump[0][jumpId].length
+      : 0;
+
+    // Add altFormsCount BEFORE calculating altFormsPT
+    totalAltForms += altFormsCount;
 
     const itemsPT = Math.floor(totalItems / packRatCount) * packRatPT - accumulatedItemsPT;
     const altFormsPT = Math.floor(totalAltForms / thousandFacesCount) * thousandFacesPT - accumulatedAltFormsPT;
@@ -163,20 +197,13 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
 
     const exterminationsValue = exterminationValues[jumpId] || totals.Exterminations;
 
-    // Count main jumper's alt-forms for this jump
-    const altFormsCount = (altFormsByCharacterAndJump[0] && altFormsByCharacterAndJump[0][jumpId])
-      ? altFormsByCharacterAndJump[0][jumpId].length
-      : 0;
-
-    totalAltForms += altFormsCount;
-
     const rowData = [
       !isSupplement ? jumpCount : '',
       jumpNames[jumpId] || `Jump ${jumpId}`,
       `<span class="PTcount">${rowTotalPT}</span>`,
       totals.Items,
       `<span class="PTcount">${itemsPT}</span>`,
-      altFormsCount, // Use the correct count here
+      altFormsCount,
       `<span class="PTcount">${altFormsPT}</span>`,
       totals.Drawbacks,
       `<span class="PTcount">${drawbacksPT}</span>`,
@@ -258,7 +285,12 @@ function addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exter
 
   dropdowns.forEach(id => {
     document.getElementById(id).addEventListener('change', () => {
-      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
+      // Only update table if data is loaded and table has been generated at least once
+      if (storedData && storedResults !== null) {
+        const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData);
+        const exterminationValues = {}; // Optionally, persist these if you want to keep user edits
+        storedResults = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
+      }
     });
   });
 }
