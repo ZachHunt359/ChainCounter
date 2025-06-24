@@ -11,11 +11,22 @@
     <h1>ChainCounter</h1>
     <h2>JumpChain JSON Processor</h2>
     <h5>Currently designed for <a href="http://docs.google.com/document/d/1jQJx6p6JLsG0hEUR3HMf9S4sAeYYYUpyBS7Ebkh-u0E/edit?tab=t.0">Fanficwriter’s Jumpchain Milestone Supplement Revised Edition 1.0</a>, but I'll be adding functionality for <a href="http://drive.google.com/file/d/1ZSW44T9xiKIAjuhYGdmlstw6UcGy2v6q/view">aleksds1's Redux version</a> soon.</h5>
-    <h5>Update 2025-06-24: Alt-Forms are now counted correctly!</h5>
+    <aside>
+    <h5>Update 2025-06-24:</h5>
+    <ul>
+      <li>Alt-Forms are now counted correctly!</li>
+      <li>You can now select which Jumper or Companion you want to check.</li>
+      <li>Exterminations are misbehaving. Working on that.</li>
+    </ul>
+    </aside>
     <p>Upload your <a href="http://chainmaker.design/">ChainMaker</a> JSON file and click "Generate Table" to see your progress and calculate your rewards.</p>
+    <p>Choose File > Upload > Select Jumper > Generate Table</p>
     
     <input type="file" id="fileInput" accept=".json">
     <button id="uploadButton">Upload</button>
+    <br>
+    <label for="jumperSelect">Select Jumper:</label>
+    <select id="jumperSelect"></select>
     <button id="generateTableButton" disabled>Generate Table</button>
 
     <div id="resultsContainer" style="display: none;">

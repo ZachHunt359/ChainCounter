@@ -1,34 +1,6 @@
 let storedData = null;
 let storedResults = null;
-
-/* document.getElementById('uploadButton').addEventListener('click', () => {
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
-
-  if (!file) {
-    alert('Please select a file first!');
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      const data = JSON.parse(event.target.result);
-      populateDropdowns(); // Ensure dropdowns are populated before calling displayResults
-      const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(data);
-      const exterminationValues = {}; // Store Extermination input values
-      const resultsArray = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
-      //console.log(resultsArray); // You can use this array for further processing
-
-      // Add event listeners to dropdowns to recalculate the table on change
-      addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
-      addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
-    } catch (error) {
-      alert('Error parsing JSON file: ' + error.message);
-    }
-  };
-  reader.readAsText(file);
-}); */
+let jumperId = 0; // Default to main jumper
 
 document.getElementById('uploadButton').addEventListener('click', () => {
   const fileInput = document.getElementById('fileInput');
@@ -44,6 +16,7 @@ document.getElementById('uploadButton').addEventListener('click', () => {
     try {
       storedData = JSON.parse(event.target.result);
       populateDropdowns();
+      populateJumperDropdown(storedData);
       document.getElementById('generateTableButton').disabled = false;
       // Do not generate table yet!
     } catch (error) {
@@ -58,13 +31,16 @@ document.getElementById('generateTableButton').addEventListener('click', () => {
     alert('Please upload a file first!');
     return;
   }
-  const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData);
-  const exterminationValues = {}; // Reset extermination values on each generation
-  storedResults = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
+  jumperId = Number(document.getElementById('jumperSelect').value);
+  const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData, jumperId);
+  const exterminationValues = {};
+  storedResults = displayResults(
+    jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump, jumperId
+  );
 });
 
-function processPurchases(data) {
-  const typeMappings = { 1: 'Items', 3: 'Drawbacks' }; // Remove 2: 'AltForms'
+function processPurchases(data, jumperId = 0) {
+  const typeMappings = { 1: 'Items', 3: 'Drawbacks' };
   const jumpTotals = {};
   const jumpNames = {};
   const jumpSupplements = {};
@@ -79,7 +55,7 @@ function processPurchases(data) {
 
   if (data.purchases) {
     for (const purchase of Object.values(data.purchases)) {
-      if (purchase._characterId === 0) { // Only main jumper
+      if (purchase._characterId === jumperId) { // Use id for selected jumper
         const jumpId = purchase._jumpId;
         const itemType = purchase._type;
 
@@ -116,7 +92,7 @@ function processPurchases(data) {
 }
 
 // In displayResults, use altFormsByCharacterAndJump[0][jumpId] for main jumper's alt-forms:
-function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump) {
+function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump, jumperId = 0) {
   const resultsTableBody = document.getElementById('resultsTableBody');
   resultsTableBody.innerHTML = '';
 
@@ -170,8 +146,8 @@ function displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationVal
     totalExterminations += exterminationValues[jumpId] || totals.Exterminations;
 
     // Count main jumper's alt-forms for this jump
-    const altFormsCount = (altFormsByCharacterAndJump[0] && altFormsByCharacterAndJump[0][jumpId])
-      ? altFormsByCharacterAndJump[0][jumpId].length
+    const altFormsCount = (altFormsByCharacterAndJump[jumperId] && altFormsByCharacterAndJump[jumperId][jumpId])
+      ? altFormsByCharacterAndJump[jumperId][jumpId].length
       : 0;
 
     // Add altFormsCount BEFORE calculating altFormsPT
@@ -287,9 +263,12 @@ function addDropdownEventListeners(jumpTotals, jumpNames, jumpSupplements, exter
     document.getElementById(id).addEventListener('change', () => {
       // Only update table if data is loaded and table has been generated at least once
       if (storedData && storedResults !== null) {
-        const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData);
-        const exterminationValues = {}; // Optionally, persist these if you want to keep user edits
-        storedResults = displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump);
+        const jumperId = Number(document.getElementById('jumperSelect').value); // <-- get current jumperId
+        const { jumpTotals, jumpNames, jumpSupplements, jumpOrder, altFormsByCharacterAndJump } = processPurchases(storedData, jumperId);
+        //const exterminationValues = {}; // Optionally, persist these if you want to keep user edits
+        storedResults = displayResults(
+          jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump, jumperId
+        );
       }
     });
   });
@@ -302,7 +281,8 @@ function addExterminationInputListeners(jumpTotals, jumpNames, jumpSupplements, 
     input.addEventListener('input', () => {
       const jumpId = input.getAttribute('data-jump-id');
       exterminationValues[jumpId] = parseInt(input.value, 10) || 0;
-      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder);
+      const jumperId = Number(document.getElementById('jumperSelect').value); // <-- get current jumperId
+      displayResults(jumpTotals, jumpNames, jumpSupplements, exterminationValues, jumpOrder, altFormsByCharacterAndJump, jumperId);
     });
   });
 }
@@ -320,5 +300,36 @@ function updateElementWithTooltip(id, value, tooltipText) {
   
   if (id.endsWith('PT')) {
     element.classList.add('PTcount');
+  }
+}
+
+function populateJumperDropdown(data) {
+  const jumperSelect = document.getElementById('jumperSelect');
+  jumperSelect.innerHTML = ''; // Clear previous options
+
+  // Find all unique jumper IDs and names
+  const jumperMap = {};
+  if (data.characters) {
+    for (const [id, char] of Object.entries(data.characters)) {
+      jumperMap[id] = char.name || `Jumper ${id}`;
+    }
+  } else if (data.purchases) {
+    // Fallback: find IDs from purchases if no characters section
+    for (const purchase of Object.values(data.purchases)) {
+      const id = purchase._characterId;
+      if (!(id in jumperMap)) {
+        jumperMap[id] = `Jumper ${id}`;
+      }
+    }
+  } else {
+    jumperMap[0] = 'Jumper 0';
+  }
+
+  // Add options to dropdown
+  for (const [id, name] of Object.entries(jumperMap)) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.textContent = name;
+    jumperSelect.appendChild(option);
   }
 }
