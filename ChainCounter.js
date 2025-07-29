@@ -63,10 +63,14 @@ function processPurchases(data, jumperId = 0) {
           jumpTotals[jumpId] = { Items: 0, AltForms: 0, Drawbacks: 0, Exterminations: 0 };
         }
 
-        if (typeMappings[itemType]) {
-          jumpTotals[jumpId][typeMappings[itemType]] += 1;
+        // Only count items that are NOT temporary (duration !== 1)
+        if (itemType === 1) {
+          if (purchase.duration !== 1) {
+            jumpTotals[jumpId].Items += 1;
+          }
+        } else if (itemType === 3) {
+          jumpTotals[jumpId].Drawbacks += 1;
         }
-        // Do NOT increment AltForms here!
       }
     }
   }
