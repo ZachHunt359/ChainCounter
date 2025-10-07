@@ -57,6 +57,45 @@ td.jump-name.supplement {
   text-align: right; /* Right-align Supplement names */
 }
 
+/* Age info wrapper */
+#ageInfoWrap {
+  margin-bottom: 8px;
+}
+
+#ageSummaryTable {
+  border-collapse: collapse;
+  margin-top: 6px;
+  width: auto;
+}
+
+#ageSummaryTable td {
+  padding: 6px 10px;
+  vertical-align: middle;
+}
+
+#ageSummaryTable td:first-child {
+  font-weight: 600;
+  width: 220px;
+  text-align: left;
+}
+
+#ageBreakTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#ageBreakTable th, #ageBreakTable td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+}
+
+/* Align jump names in breakdown like main table: left for normal, right for supplements */
+.age-break-jump { text-align: left; }
+.age-break-jump.supplement { text-align: right; }
+
+#ageBreakTable tbody tr:nth-child(even) { background-color: #f9f9f9; }
+
+
 /* Tooltip container */
 .tooltip {
   position: relative;
