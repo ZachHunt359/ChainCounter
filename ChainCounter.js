@@ -713,15 +713,38 @@ function populateDropdowns() {
   document.getElementById('packRatPT').innerHTML = dropdownOptions;
   document.getElementById('packRatCount').innerHTML = dropdownOptions;
 
-  // Set default values
-  document.getElementById('drawbackTakerPT').value = 1;
-  document.getElementById('drawbackTakerCount').value = 10;
-  document.getElementById('thousandFacesPT').value = 1;
-  document.getElementById('thousandFacesCount').value = 2;
-  document.getElementById('exterminatorsPT').value = 2;
-  document.getElementById('exterminatorsCount').value = 4;
-  document.getElementById('packRatPT').value = 2;
-  document.getElementById('packRatCount').value = 5;
+  // Default values
+  const defaults = {
+    drawbackTakerPT: 1,
+    drawbackTakerCount: 10,
+    thousandFacesPT: 1,
+    thousandFacesCount: 2,
+    exterminatorsPT: 2,
+    exterminatorsCount: 4,
+    packRatPT: 2,
+    packRatCount: 5
+  };
+
+  // Restore from localStorage or use defaults
+  for (const [id, defaultValue] of Object.entries(defaults)) {
+    const savedValue = localStorage.getItem(`rewardScenario_${id}`);
+    document.getElementById(id).value = savedValue !== null ? savedValue : defaultValue;
+  }
+
+  // Add change listeners to save to localStorage
+  const dropdownIds = [
+    'drawbackTakerPT', 'drawbackTakerCount',
+    'thousandFacesPT', 'thousandFacesCount',
+    'exterminatorsPT', 'exterminatorsCount',
+    'packRatPT', 'packRatCount'
+  ];
+
+  dropdownIds.forEach(id => {
+    const element = document.getElementById(id);
+    element.addEventListener('change', () => {
+      localStorage.setItem(`rewardScenario_${id}`, element.value);
+    });
+  });
 }
 
 /**
